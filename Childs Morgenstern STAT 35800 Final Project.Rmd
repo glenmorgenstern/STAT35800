@@ -11,4 +11,40 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Rodent Control
 
-### Test push
+```{r}
+library(tidyverse)
+d <- read_csv("C:/Users/glenm/Downloads/311_Service_Requests_20261123.csv")
+```
+
+```{r}
+d_clean <- d %>%
+  # Remove rows flagged as duplicates (keeps FALSE and any NAs)
+  filter(!DUPLICATE | is.na(DUPLICATE)) %>%
+  # Parse CREATED_DATE (MM/DD/YYYY HH:MM:SS AM/PM) and keep 2022+
+  mutate(CREATED_DATE_PARSED = mdy_hms(CREATED_DATE)) %>%
+  filter(year(CREATED_DATE_PARSED) >= 2022)
+
+d_small <- d_clean %>%
+  select(
+    SR_NUMBER, STATUS, ORIGIN,
+    CREATED_DATE_PARSED, CLOSED_DATE,
+    CREATED_HOUR, CREATED_DAY_OF_WEEK, CREATED_MONTH,
+    COMMUNITY_AREA, WARD, ZIP_CODE, LATITUDE, LONGITUDE
+  ) %>%
+  mutate(
+    STATUS = as.factor(STATUS),
+    ORIGIN = as.factor(ORIGIN)
+  )
+
+# Check new RAM size
+format(object.size(d_small), units = "MB")
+
+# Comes out to about 50MB
+
+# Save compressed for GitHub
+saveRDS(d_small, "chicago_rodents_2022_2026.rds", compress = "xz")
+
+# Check exact file size on disk (in MB)
+file.size("chicago_rodents_2022_2026.rds") / 1024^2
+```
+
